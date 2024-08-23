@@ -10,7 +10,7 @@ struct bo_json_error _simple_write(struct bo_json_writer *writer, const void *da
 		return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, 0, NULL);
 	}
 
-	memcpy(swriter->buf + swriter->len, data, len);
+	memcpy((char *)swriter->buf + swriter->len, data, len);
 	swriter->len += len;
 	return BO_JSON_OK();
 }

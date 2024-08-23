@@ -18,7 +18,7 @@ static struct bo_json_error encode_bool(const void *in, const struct bo_json_val
 	static const char true_str[] = "true";
 	static const char false_str[] = "false";
 
-	const bool v = *((bool *)(in + in_desc->value_offset));
+	const bool v = *((bool *)((const char *)in + in_desc->value_offset));
 	if (v) {
 		return bo_json_writer_write(writer, true_str, sizeof(true_str) - 1);
 	} else {
@@ -31,7 +31,7 @@ static struct bo_json_error encode_int(const void *in, const struct bo_json_valu
 {
 	char number_str[12];
 	int len = snprintf(number_str, sizeof(number_str), "%d",
-			   *((const int *)(in + in_desc->value_offset)));
+			   *((const int *)((const char *)in + in_desc->value_offset)));
 	if (len < 0) {
 		return BO_JSON_ERROR(BO_JSON_ERROR_CONVERT, NULL, in_desc);
 	}
@@ -43,7 +43,7 @@ static struct bo_json_error encode_double(const void *in, const struct bo_json_v
 {
 	char number_str[26];
 	int len = snprintf(number_str, sizeof(number_str), "%1.15g",
-			   *((const double *)(in + in_desc->value_offset)));
+			   *((const double *)((const char *)in + in_desc->value_offset)));
 	if (len < 0) {
 		return BO_JSON_ERROR(BO_JSON_ERROR_CONVERT, NULL, in_desc);
 	}
@@ -60,7 +60,7 @@ static struct bo_json_error encode_cstr(const void *in, const struct bo_json_val
 		return err;
 	}
 
-	const char *str = in + in_desc->value_offset;
+	const char *str = (const char *)in + in_desc->value_offset;
 
 	err = bo_json_writer_write(writer, str, strlen(str));
 	if (err.err != BO_JSON_ERROR_NONE) {
@@ -85,7 +85,7 @@ static struct bo_json_error encode_object(const void *in, const struct bo_json_v
 	for (size_t i = 0; i < in_desc->object.n_attr_descs; i++) {
 		const struct bo_json_obj_attr_desc *desc = &in_desc->object.attr_descs[i];
 
-		if (!(*(const bool *)(in + desc->exist_offset))) {
+		if (!(*(const bool *)((const char *)in + desc->exist_offset))) {
 			continue;
 		}
 
@@ -109,7 +109,7 @@ static struct bo_json_error encode_object(const void *in, const struct bo_json_v
 			return err;
 		}
 
-		err = encode_value(in + in_desc->value_offset, &desc->desc, writer);
+		err = encode_value((const char *)in + in_desc->value_offset, &desc->desc, writer);
 		if (err.err != BO_JSON_ERROR_NONE) {
 			return err;
 		}
@@ -139,13 +139,13 @@ static struct bo_json_error encode_array(const void *in, const struct bo_json_va
 		return err;
 	}
 
-	const size_t count = *((size_t *)(in + in_desc->array.count_offset));
+	const size_t count = *((size_t *)((const char *)in + in_desc->array.count_offset));
 	const struct bo_json_value_desc *elem_desc = in_desc->array.elem_attr_desc;
 	const size_t elem_size = in_desc->array.elem_size;
-	const void *array_base = in + in_desc->value_offset;
+	const void *array_base = (const char *)in + in_desc->value_offset;
 
 	for (size_t i = 0; i < count; i++) {
-		err = encode_value(array_base + (i * elem_size), elem_desc, writer);
+		err = encode_value((const char *)array_base + (i * elem_size), elem_desc, writer);
 		if (err.err != BO_JSON_ERROR_NONE) {
 			return err;
 		}

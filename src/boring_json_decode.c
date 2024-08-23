@@ -346,7 +346,7 @@ static struct bo_json_error decode_true(const struct bo_json_token *token,
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 
-	*((bool *)(out + desc->value_offset)) = true;
+	*((bool *)((char *)out + desc->value_offset)) = true;
 
 	return BO_JSON_OK();
 }
@@ -372,7 +372,7 @@ static struct bo_json_error decode_false(const struct bo_json_token *token,
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 
-	*((bool *)(out + desc->value_offset)) = false;
+	*((bool *)((char *)out + desc->value_offset)) = false;
 
 	return BO_JSON_OK();
 }
@@ -403,8 +403,8 @@ static struct bo_json_error decode_string(const struct bo_json_token *token,
 		return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, token->start, desc);
 	}
 
-	strncpy(out + desc->value_offset, token->start, token_len(token));
-	*((char *)(out + desc->value_offset + token_len(token))) = '\0';
+	strncpy((char *)out + desc->value_offset, token->start, token_len(token));
+	*((char *)((char *)out + desc->value_offset + token_len(token))) = '\0';
 
 	return BO_JSON_OK();
 }
@@ -438,9 +438,9 @@ static struct bo_json_error decode_number(const struct bo_json_token *token,
 	strncpy(buf, token->start, token_len(token));
 
 	if (desc->type == BO_JSON_VALUE_TYPE_INT) {
-		*((int *)(out + desc->value_offset)) = (int)strtol(buf, NULL, 10);
+		*((int *)((char *)out + desc->value_offset)) = (int)strtol(buf, NULL, 10);
 	} else {
-		*((double *)(out + desc->value_offset)) = strtod(buf, NULL);
+		*((double *)((char *)out + desc->value_offset)) = strtod(buf, NULL);
 	}
 
 	return BO_JSON_OK();
@@ -519,7 +519,7 @@ static struct bo_json_error decode_object_key_value(struct bo_json_lexer *lexer,
 		}
 
 		if (desc != NULL) {
-			*((bool *)(out + descs[i].exist_offset)) = true;
+			*((bool *)((char *)out + descs[i].exist_offset)) = true;
 		}
 
 		return BO_JSON_OK();
@@ -534,7 +534,7 @@ static struct bo_json_error decode_object(struct bo_json_lexer *lexer,
 	struct bo_json_error err;
 
 	if (desc != NULL) {
-		out = out + desc->value_offset;
+		out = (char *)out + desc->value_offset;
 	}
 
 	for (;;) {
@@ -593,14 +593,14 @@ static struct bo_json_error decode_array(struct bo_json_lexer *lexer,
 	const struct bo_json_value_desc *elem_attr =
 		(desc != NULL) ? desc->array.elem_attr_desc : NULL;
 	const size_t elem_size = (desc != NULL) ? desc->array.elem_size : 0;
-	void *array_base = out + ((desc != NULL) ? desc->value_offset : 0);
+	void *array_base = (char *)out + ((desc != NULL) ? desc->value_offset : 0);
 
 	size_t count = 0;
 	while (desc == NULL || count < desc->array.capacity) {
 		struct bo_json_token next;
 
 		// value
-		err = decode_value(lexer, elem_attr, array_base + (count * elem_size));
+		err = decode_value(lexer, elem_attr, (char *)array_base + (count * elem_size));
 		if (err.err != BO_JSON_ERROR_NONE) {
 			return err;
 		}
@@ -624,7 +624,7 @@ static struct bo_json_error decode_array(struct bo_json_lexer *lexer,
 
 DONE:
 	if (desc != NULL) {
-		*((size_t *)(out + desc->array.count_offset)) = count;
+		*((size_t *)((char *)out + desc->array.count_offset)) = count;
 	}
 
 	return BO_JSON_OK();
