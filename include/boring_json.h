@@ -278,6 +278,8 @@ static inline struct bo_json_error bo_json_writer_write(struct bo_json_writer *w
 struct bo_json_error bo_json_encode(const void *in, const struct bo_json_value_desc *in_desc,
 				    struct bo_json_writer *writer);
 
+int bo_json_error_to_errno(const struct bo_json_error *err);
+
 #ifdef __cplusplus
 }
 #endif
