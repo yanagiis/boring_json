@@ -126,21 +126,22 @@ enum bo_json_value_type {
 		},                                                                                 \
 	}
 
-#define BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_)                        \
+#define BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_, count_)                \
 	{                                                                                          \
 		.type = BO_JSON_VALUE_TYPE_ARRAY, .value_offset = offsetof(struct_, member_),      \
 		.array = {                                                                         \
 			.elem_attr_desc = elem_desc_,                                              \
 			.elem_size = sizeof(((struct_ *)(0))->member_[0]),                         \
 			.capacity = capacity_,                                                     \
-			.count_offset = offsetof(struct_, member_##_count),                        \
+			.count_offset = offsetof(struct_, count_),                                 \
 		},                                                                                 \
 	}
 
-#define BO_JSON_OBJECT_ATTR_ARRAY(struct_, member_, elem_desc_, capacity_, exist_)                 \
+#define BO_JSON_OBJECT_ATTR_ARRAY(struct_, member_, elem_desc_, capacity_, exist_, count_)         \
 	{                                                                                          \
 		.name = #member_, .exist_offset = offsetof(struct_, exist_),                       \
-		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_),       \
+		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_,        \
+						   count_),                                        \
 	}
 
 #define BO_JSON_OBJECT_ATTR_NULL_NAMED(struct_, member_, name_, exist_)                            \
@@ -180,10 +181,12 @@ enum bo_json_value_type {
 						    BO_ARRAY_SIZE(obj_attrs_)),                    \
 	}
 
-#define BO_JSON_OBJECT_ATTR_ARRAY_NAMED(struct_, member_, elem_desc_, capacity_, name_, exist_)    \
+#define BO_JSON_OBJECT_ATTR_ARRAY_NAMED(struct_, member_, elem_desc_, capacity_, name_, exist_,    \
+					_count)                                                    \
 	{                                                                                          \
 		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_),       \
+		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_,        \
+						   _count),                                        \
 	}
 
 #define BO_JSON_OBJECT_ATTR_NULL(struct_, member_, exist_)                                         \

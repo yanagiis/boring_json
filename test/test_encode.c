@@ -151,7 +151,7 @@ static const struct bo_json_obj_attr_desc prims_attrs[] = {
 	BO_JSON_OBJECT_ATTR_DOUBLE(struct prims, negative_double, negative_double_exist),
 	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct prims, str, str_exist),
 	BO_JSON_OBJECT_ATTR_ARRAY(struct prims, arr_integer, &bo_json_int_desc, 8,
-				  arr_integer_exist),
+				  arr_integer_exist, arr_integer_count),
 };
 
 static const struct bo_json_value_desc prims_desc = BO_JSON_VALUE_OBJECT(prims_attrs);
@@ -382,7 +382,7 @@ static const struct bo_json_obj_attr_desc obj_nest_2_attrs[] = {
 	BO_JSON_OBJECT_ATTR_DOUBLE(struct obj_nest_2, negative_double, negative_double_exist),
 	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct obj_nest_2, str, str_exist),
 	BO_JSON_OBJECT_ATTR_ARRAY(struct obj_nest_2, arr_integer, &bo_json_int_desc, 8,
-				  arr_integer_exist),
+				  arr_integer_exist, arr_integer_count),
 };
 
 static const struct bo_json_obj_attr_desc obj_nest_1_attrs[] = {
