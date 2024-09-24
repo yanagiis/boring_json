@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#if CONFIG_DEBUG
+#if CONFIG_BORING_JSON_DEBUG
 
 #include <stdio.h>
 
@@ -17,7 +17,7 @@ extern "C" {
 
 #define BO_DEBUG(fmt, ...)
 
-#endif // CONFIG_DEBUG
+#endif // CONFIG_BORING_JSON_DEBUG
 
 #ifdef __cplusplus
 }
