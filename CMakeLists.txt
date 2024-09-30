@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12.4)
 
-project(boringjson C)
+if(NOT ESP_PLATFORM)
+  project(boringjson C)
+endif()
 
 set(BORING_JSON_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 
@@ -15,6 +17,8 @@ set(SOURCES
 
 if(ZEPHYR_BASE)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/zephyr.cmake)
+elseif(ESP_PLATFORM)
+  include(${CMAKE_CURRENT_LIST_DIR}/cmake/esp.cmake)
 else()
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/linux.cmake)
 endif()
