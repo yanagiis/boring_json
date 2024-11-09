@@ -44,6 +44,7 @@ enum bo_json_value_type {
 	BO_JSON_VALUE_TYPE_NULL = 0, // null -> bool
 	BO_JSON_VALUE_TYPE_BOOL,     // bool -> bool
 	BO_JSON_VALUE_TYPE_INT,	     // number -> int
+	BO_JSON_VALUE_TYPE_INT64,    // number -> int64
 	BO_JSON_VALUE_TYPE_DOUBLE,   // number -> double
 	BO_JSON_VALUE_TYPE_CSTR,     // string -> char[]
 	BO_JSON_VALUE_TYPE_OBJECT,   // object -> struct
@@ -63,6 +64,11 @@ enum bo_json_value_type {
 #define BO_JSON_VALUE_INT()                                                                        \
 	{                                                                                          \
 		.type = BO_JSON_VALUE_TYPE_INT, .value_offset = 0,                                 \
+	}
+
+#define BO_JSON_VALUE_INT64()                                                                      \
+	{                                                                                          \
+		.type = BO_JSON_VALUE_TYPE_INT64, .value_offset = 0,                               \
 	}
 
 #define BO_JSON_VALUE_DOUBLE()                                                                     \
@@ -102,6 +108,11 @@ enum bo_json_value_type {
 #define BO_JSON_VALUE_STRUCT_INT(struct_, member_)                                                 \
 	{                                                                                          \
 		.type = BO_JSON_VALUE_TYPE_INT, .value_offset = offsetof(struct_, member_),        \
+	}
+
+#define BO_JSON_VALUE_STRUCT_INT64(struct_, member_)                                               \
+	{                                                                                          \
+		.type = BO_JSON_VALUE_TYPE_INT64, .value_offset = offsetof(struct_, member_),      \
 	}
 
 #define BO_JSON_VALUE_STRUCT_DOUBLE(struct_, member_)                                              \
@@ -162,6 +173,12 @@ enum bo_json_value_type {
 		.desc = BO_JSON_VALUE_STRUCT_INT(struct_, member_),                                \
 	}
 
+#define BO_JSON_OBJECT_ATTR_INT64_NAMED(struct_, member_, name_, exist_)                           \
+	{                                                                                          \
+		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
+		.desc = BO_JSON_VALUE_STRUCT_INT64(struct_, member_),                              \
+	}
+
 #define BO_JSON_OBJECT_ATTR_DOUBLE_NAMED(struct_, member_, name_, exist_)                          \
 	{                                                                                          \
 		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
@@ -197,6 +214,9 @@ enum bo_json_value_type {
 
 #define BO_JSON_OBJECT_ATTR_INT(struct_, member_, exist_)                                          \
 	BO_JSON_OBJECT_ATTR_INT_NAMED(struct_, member_, #member_, exist_)
+
+#define BO_JSON_OBJECT_ATTR_INT64(struct_, member_, exist_)                                        \
+	BO_JSON_OBJECT_ATTR_INT64_NAMED(struct_, member_, #member_, exist_)
 
 #define BO_JSON_OBJECT_ATTR_DOUBLE(struct_, member_, exist_)                                       \
 	BO_JSON_OBJECT_ATTR_DOUBLE_NAMED(struct_, member_, #member_, exist_)
@@ -237,6 +257,7 @@ struct bo_json_obj_attr_desc {
 extern struct bo_json_value_desc bo_json_null_desc;
 extern struct bo_json_value_desc bo_json_bool_desc;
 extern struct bo_json_value_desc bo_json_int_desc;
+extern struct bo_json_value_desc bo_json_int64_desc;
 extern struct bo_json_value_desc bo_json_double_desc;
 
 /**
