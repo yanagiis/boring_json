@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "boring_json.h"
 
@@ -32,6 +33,18 @@ static struct bo_json_error encode_int(const void *in, const struct bo_json_valu
 	char number_str[12];
 	int len = snprintf(number_str, sizeof(number_str), "%d",
 			   *((const int *)((const char *)in + in_desc->value_offset)));
+	if (len < 0) {
+		return BO_JSON_ERROR(BO_JSON_ERROR_CONVERT, NULL, in_desc);
+	}
+	return bo_json_writer_write(writer, number_str, len);
+}
+
+static struct bo_json_error encode_int64(const void *in, const struct bo_json_value_desc *in_desc,
+					 struct bo_json_writer *writer)
+{
+	char number_str[24];
+	int len = snprintf(number_str, sizeof(number_str), "%" PRIi64,
+			   *((const int64_t *)((const char *)in + in_desc->value_offset)));
 	if (len < 0) {
 		return BO_JSON_ERROR(BO_JSON_ERROR_CONVERT, NULL, in_desc);
 	}
@@ -180,6 +193,8 @@ static struct bo_json_error encode_value(const void *in, const struct bo_json_va
 		return encode_bool(in, in_desc, writer);
 	case BO_JSON_VALUE_TYPE_INT:
 		return encode_int(in, in_desc, writer);
+	case BO_JSON_VALUE_TYPE_INT64:
+		return encode_int64(in, in_desc, writer);
 	case BO_JSON_VALUE_TYPE_DOUBLE:
 		return encode_double(in, in_desc, writer);
 	case BO_JSON_VALUE_TYPE_CSTR:

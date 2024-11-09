@@ -427,11 +427,12 @@ static struct bo_json_error decode_number(const struct bo_json_token *token,
 	if (desc == NULL) {
 		return BO_JSON_OK();
 	}
-	if (desc->type != BO_JSON_VALUE_TYPE_INT && desc->type != BO_JSON_VALUE_TYPE_DOUBLE) {
+	if (desc->type != BO_JSON_VALUE_TYPE_INT && desc->type != BO_JSON_VALUE_TYPE_INT64 &&
+	    desc->type != BO_JSON_VALUE_TYPE_DOUBLE) {
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 
-	char buf[16] = {0};
+	char buf[24] = {0};
 
 	assert(sizeof(buf) > token_len(token));
 
@@ -439,6 +440,8 @@ static struct bo_json_error decode_number(const struct bo_json_token *token,
 
 	if (desc->type == BO_JSON_VALUE_TYPE_INT) {
 		*((int *)((char *)out + desc->value_offset)) = (int)strtol(buf, NULL, 10);
+	} else if (desc->type == BO_JSON_VALUE_TYPE_INT64) {
+		*((int64_t *)((char *)out + desc->value_offset)) = (int64_t)strtoll(buf, NULL, 10);
 	} else {
 		*((double *)((char *)out + desc->value_offset)) = strtod(buf, NULL);
 	}
