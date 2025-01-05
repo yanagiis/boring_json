@@ -1,5 +1,5 @@
-option(CONFIG_DEBUG "Enable debug print" OFF)
-option(CONFIG_TESTING "Build testing" OFF)
+option(CONFIG_BORING_JSON_DEBUG "Enable debug print" OFF)
+option(CONFIG_BORING_JSON_TESTING "Build testing" OFF)
 
 add_library(boring_json ${SOURCES})
 
