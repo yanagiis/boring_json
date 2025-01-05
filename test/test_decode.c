@@ -149,6 +149,31 @@ struct prims {
 
 	bool inexistence;
 	bool inexistence_exist;
+
+	int positive_int_null;
+	unsigned char positive_int_null_flags;
+	bool positive_int_null_exist;
+
+	int negative_int_null;
+	unsigned char negative_int_null_flags;
+	bool negative_int_null_exist;
+
+	double positive_double_null;
+	unsigned char positive_double_null_flags;
+	bool positive_double_null_exist;
+
+	double negative_double_null;
+	unsigned char negative_double_null_flags;
+	bool negative_double_null_exist;
+
+	char str_null[32];
+	unsigned char str_null_flags;
+	bool str_null_exist;
+
+	int arr_integer_null[8];
+	unsigned char arr_integer_null_flags;
+	bool arr_integer_null_exist;
+	size_t arr_integer_null_count;
 };
 
 static const struct bo_json_obj_attr_desc prims_attrs[] = {
@@ -161,6 +186,19 @@ static const struct bo_json_obj_attr_desc prims_attrs[] = {
 	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct prims, str, str_exist),
 	BO_JSON_OBJECT_ATTR_ARRAY(struct prims, arr_integer, &bo_json_int_desc, 8,
 				  arr_integer_exist, arr_integer_count),
+	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, positive_int_null, positive_int_null_exist,
+					positive_int_null_flags),
+	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, negative_int_null, negative_int_null_exist,
+					negative_int_null_flags),
+	BO_JSON_OBJECT_ATTR_DOUBLE_OR_NULL(struct prims, positive_double_null,
+					   positive_double_null_exist, positive_double_null_flags),
+	BO_JSON_OBJECT_ATTR_DOUBLE_OR_NULL(struct prims, negative_double_null,
+					   negative_double_null_exist, negative_double_null_flags),
+	BO_JSON_OBJECT_ATTR_CSTR_ARRAY_OR_NULL(struct prims, str_null, str_null_exist,
+					       str_null_flags),
+	BO_JSON_OBJECT_ATTR_ARRAY_OR_NULL(struct prims, arr_integer_null, &bo_json_int_desc, 8,
+					  arr_integer_null_exist, arr_integer_count,
+					  arr_integer_null_flags),
 };
 
 static const struct bo_json_value_desc prims_desc = BO_JSON_VALUE_OBJECT(prims_attrs);
@@ -176,7 +214,13 @@ void test_decode_object_primitive_types(void)
 		"\"positive_double\": 100.1,"
 		"\"negative_double\": -100.1,"
 		"\"str\": \"boring json\","
-		"\"arr_integer\": [0,1,-1,2,-2,3,-3]"
+		"\"arr_integer\": [0,1,-1,2,-2,3,-3],"
+		"\"positive_int_null\": null,"
+		"\"negative_int_null\": null,"
+		"\"positive_double_null\": null,"
+		"\"negative_double_null\": null,"
+		"\"str_null\": null,"
+		"\"arr_integer_null\": null"
 	"}";
 	// clang-format on
 
@@ -200,6 +244,19 @@ void test_decode_object_primitive_types(void)
 		.arr_integer_exist = true,
 		.inexistence = false,
 		.inexistence_exist = false,
+		.positive_int_null_exist = true,
+		.positive_int_null_flags = BO_JSON_NULL_BIT,
+		.negative_int_null_exist = true,
+		.negative_int_null_flags = BO_JSON_NULL_BIT,
+		.positive_double_null_exist = true,
+		.positive_double_null_flags = BO_JSON_NULL_BIT,
+		.negative_double_null_exist = true,
+		.negative_double_null_flags = BO_JSON_NULL_BIT,
+		.str_null_exist = true,
+		.str_null_flags = BO_JSON_NULL_BIT,
+		.arr_integer_null_count = 0,
+		.arr_integer_null_flags = BO_JSON_NULL_BIT,
+		.arr_integer_null_exist = true,
 	};
 	struct prims actual = {0};
 	struct bo_json_error err;
@@ -227,6 +284,18 @@ void test_decode_object_primitive_types(void)
 	TEST_ASSERT_EQUAL_INT(expect.arr_integer_count, actual.arr_integer_count);
 	TEST_ASSERT_EQUAL_INT_ARRAY(expect.arr_integer, actual.arr_integer,
 				    expect.arr_integer_count);
+	TEST_ASSERT_EQUAL(expect.positive_int_null_exist, actual.positive_int_null_exist);
+	TEST_ASSERT_EQUAL(expect.positive_int_null_flags, actual.positive_int_null_flags);
+	TEST_ASSERT_EQUAL(expect.negative_int_null_exist, actual.negative_int_null_exist);
+	TEST_ASSERT_EQUAL(expect.negative_int_null_flags, actual.negative_int_null_flags);
+	TEST_ASSERT_EQUAL(expect.positive_double_null_exist, actual.positive_double_null_exist);
+	TEST_ASSERT_EQUAL(expect.positive_double_null_flags, actual.positive_double_null_flags);
+	TEST_ASSERT_EQUAL(expect.negative_double_null_exist, actual.negative_double_null_exist);
+	TEST_ASSERT_EQUAL(expect.negative_double_null_flags, actual.negative_double_null_flags);
+	TEST_ASSERT_EQUAL(expect.str_null_exist, actual.str_null_exist);
+	TEST_ASSERT_EQUAL(expect.str_null_flags, actual.str_null_flags);
+	TEST_ASSERT_EQUAL(expect.arr_integer_null_exist, actual.arr_integer_null_exist);
+	TEST_ASSERT_EQUAL(expect.arr_integer_null_flags, actual.arr_integer_null_flags);
 }
 
 void test_decode_array_bool(void)

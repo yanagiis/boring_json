@@ -319,6 +319,10 @@ static struct bo_json_error decode_null(const struct bo_json_token *token,
 		return BO_JSON_OK();
 	}
 	if (desc->type != BO_JSON_VALUE_TYPE_NULL) {
+		if (desc->flags & BO_JSON_FLAGS_NULLABLE) {
+			*((unsigned char *)out + desc->flags_offset) |= BO_JSON_NULL_BIT;
+			return BO_JSON_OK();
+		}
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 

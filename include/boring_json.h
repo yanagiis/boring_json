@@ -22,6 +22,11 @@ extern "C" {
 
 #define BO_ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
+#define BO_JSON_FLAGS_NONE     (0)
+#define BO_JSON_FLAGS_NULLABLE (1 << 0)
+
+#define BO_JSON_NULL_BIT (1 << 0)
+
 enum bo_json_error_code {
 	BO_JSON_ERROR_NONE = 0,
 	BO_JSON_ERROR_PARTIAL,
@@ -51,181 +56,278 @@ enum bo_json_value_type {
 	BO_JSON_VALUE_TYPE_ARRAY,    // array -> struct[]
 };
 
-#define BO_JSON_VALUE_NULL()                                                                       \
+#define BO_JSON_VALUE_BOOL_EXT(value_offset_, flags_offset_, flags_)                               \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_NULL, .value_offset = 0,                                \
+		.type = BO_JSON_VALUE_TYPE_BOOL,                                                   \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
 	}
 
-#define BO_JSON_VALUE_BOOL()                                                                       \
+#define BO_JSON_VALUE_BOOL() BO_JSON_VALUE_BOOL_EXT(0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_INT_EXT(value_offset_, flags_offset_, flags_)                                \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_BOOL, .value_offset = 0,                                \
+		.type = BO_JSON_VALUE_TYPE_INT,                                                    \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
 	}
 
-#define BO_JSON_VALUE_INT()                                                                        \
+#define BO_JSON_VALUE_INT() BO_JSON_VALUE_INT_EXT(0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_INT64_EXT(value_offset_, flags_offset_, flags_)                              \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_INT, .value_offset = 0,                                 \
+		.type = BO_JSON_VALUE_TYPE_INT64,                                                  \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
 	}
 
-#define BO_JSON_VALUE_INT64()                                                                      \
+#define BO_JSON_VALUE_INT64() BO_JSON_VALUE_INT64_EXT(0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_DOUBLE_EXT(value_offset_, flags_offset_, flags_)                             \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_INT64, .value_offset = 0,                               \
+		.type = BO_JSON_VALUE_TYPE_DOUBLE,                                                 \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
 	}
 
-#define BO_JSON_VALUE_DOUBLE()                                                                     \
+#define BO_JSON_VALUE_DOUBLE() BO_JSON_VALUE_DOUBLE_EXT(0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_CSTR_EXT(capacity_, value_offset_, flags_offset_, flags_)                    \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_DOUBLE, .value_offset = 0,                              \
+		.type = BO_JSON_VALUE_TYPE_CSTR,                                                   \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
+		.string =                                                                          \
+			{                                                                          \
+				.capacity = capacity_,                                             \
+			},                                                                         \
 	}
 
-#define BO_JSON_VALUE_CSTR(capacity_)                                                              \
+#define BO_JSON_VALUE_CSTR(capacity_) BO_JSON_VALUE_CSTR_EXT(capacity_, 0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_OBJECT_EXT(obj_attrs_, value_offset_, flags_offset_, flags_)                 \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_CSTR, .value_offset = 0,                                \
-		.string = {                                                                        \
-			.capacity = capacity_,                                                     \
-		},                                                                                 \
+		.type = BO_JSON_VALUE_TYPE_OBJECT,                                                 \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
+		.object =                                                                          \
+			{                                                                          \
+				.attr_descs = obj_attrs_,                                          \
+				.n_attr_descs = BO_ARRAY_SIZE(obj_attrs_),                         \
+			},                                                                         \
 	}
 
 #define BO_JSON_VALUE_OBJECT(obj_attrs_)                                                           \
+	BO_JSON_VALUE_OBJECT_EXT(obj_attrs_, 0, 0, BO_JSON_FLAGS_NONE)
+
+#define BO_JSON_VALUE_ARRAY_EXT(struct_, member_, elem_desc_, value_offset_, capacity_,            \
+				count_offset_, flags_offset_, flags_)                              \
 	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_OBJECT, .value_offset = 0,                              \
-		.object = {                                                                        \
-			.attr_descs = obj_attrs_,                                                  \
-			.n_attr_descs = BO_ARRAY_SIZE(obj_attrs_),                                 \
-		},                                                                                 \
+		.type = BO_JSON_VALUE_TYPE_ARRAY,                                                  \
+		.value_offset = value_offset_,                                                     \
+		.flags_offset = flags_offset_,                                                     \
+		.flags = flags_,                                                                   \
+		.array =                                                                           \
+			{                                                                          \
+				.elem_attr_desc = elem_desc_,                                      \
+				.elem_size = sizeof(((struct_ *)(0))->member_[0]),                 \
+				.capacity = capacity_,                                             \
+				.count_offset = count_offset_,                                     \
+			},                                                                         \
 	}
+
+#define BO_JSON_VALUE_ARRAY(elem_attrs_)                                                           \
+	BO_JSON_VALUE_OBJECT_EXT(elem_desc_, 0, 0, BO_JSON_FLAGS_NONE)
 
 // macros for member in struct
 
-#define BO_JSON_VALUE_STRUCT_NULL(struct_, member_)                                                \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_NULL, .value_offset = offsetof(struct_, member_),       \
-	}
-
-#define BO_JSON_VALUE_STRUCT_BOOL(struct_, member_)                                                \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_BOOL, .value_offset = offsetof(struct_, member_),       \
-	}
-
 #define BO_JSON_VALUE_STRUCT_INT(struct_, member_)                                                 \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_INT, .value_offset = offsetof(struct_, member_),        \
-	}
+	BO_JSON_VALUE_INT_EXT(offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_VALUE_STRUCT_INT64(struct_, member_)                                               \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_INT64, .value_offset = offsetof(struct_, member_),      \
-	}
+	BO_JSON_VALUE_INT64_EXT(offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_VALUE_STRUCT_DOUBLE(struct_, member_)                                              \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_DOUBLE, .value_offset = offsetof(struct_, member_),     \
-	}
+	BO_JSON_VALUE_DOUBLE_EXT(offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_VALUE_STRUCT_CSTR_ARRAY(struct_, member_)                                          \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_CSTR, .value_offset = offsetof(struct_, member_),       \
-		.string = {                                                                        \
-			.capacity = sizeof(((struct_ *)(0))->member_),                             \
-		},                                                                                 \
-	}
+	BO_JSON_VALUE_CSTR_EXT(sizeof(((struct_ *)(0))->member_), offsetof(struct_, member_), 0,   \
+			       BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_VALUE_STRUCT_OBJECT(struct_, member_, obj_attrs_, n_obj_attrs_)                    \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_OBJECT, .value_offset = offsetof(struct_, member_),     \
-		.object = {                                                                        \
-			.attr_descs = obj_attrs_,                                                  \
-			.n_attr_descs = n_obj_attrs_,                                              \
-		},                                                                                 \
-	}
+	BO_JSON_VALUE_OBJECT_EXT(obj_attrs_, offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_, count_)                \
-	{                                                                                          \
-		.type = BO_JSON_VALUE_TYPE_ARRAY, .value_offset = offsetof(struct_, member_),      \
-		.array = {                                                                         \
-			.elem_attr_desc = elem_desc_,                                              \
-			.elem_size = sizeof(((struct_ *)(0))->member_[0]),                         \
-			.capacity = capacity_,                                                     \
-			.count_offset = offsetof(struct_, count_),                                 \
-		},                                                                                 \
-	}
-
-#define BO_JSON_OBJECT_ATTR_ARRAY(struct_, member_, elem_desc_, capacity_, exist_, count_)         \
-	{                                                                                          \
-		.name = #member_, .exist_offset = offsetof(struct_, exist_),                       \
-		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_,        \
-						   count_),                                        \
-	}
-
-#define BO_JSON_OBJECT_ATTR_NULL_NAMED(struct_, member_, name_, exist_)                            \
-	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_NULL(struct_, member_),                               \
-	}
+	BO_JSON_VALUE_ARRAY_EXT(struct_, member_, elem_desc_, offsetof(struct_, member_),          \
+				capacity_, offsetof(struct_, count_), 0, BO_JSON_FLAGS_NONE)
 
 #define BO_JSON_OBJECT_ATTR_BOOL_NAMED(struct_, member_, name_, exist_)                            \
-	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_BOOL(struct_, member_),                               \
-	}
+	{.name = name_,                                                                            \
+	 .exist_offset = offsetof(struct_, exist_),                                                \
+	 .desc = BO_JSON_VALUE_BOOL_EXT(offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE)}
+
+#define BO_JSON_OBJECT_ATTR_BOOL_NAMED_OR_NULL(struct_, member_, name_, exist_, flags_)            \
+	{.name = name_,                                                                            \
+	 .exist_offset = offsetof(struct_, exist_),                                                \
+	 .desc = BO_JSON_VALUE_BOOL_EXT(offsetof(struct_, member_), offsetof(struct_, flags_),     \
+					BO_JSON_FLAGS_NULLABLE)}
 
 #define BO_JSON_OBJECT_ATTR_INT_NAMED(struct_, member_, name_, exist_)                             \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_INT(struct_, member_),                                \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_INT_EXT(offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE),  \
+	}
+
+#define BO_JSON_OBJECT_ATTR_INT_NAMED_OR_NULL(struct_, member_, name_, exist_, flags_)             \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_INT_EXT(offsetof(struct_, member_),                          \
+					      offsetof(struct_, flags_), BO_JSON_FLAGS_NULLABLE),  \
 	}
 
 #define BO_JSON_OBJECT_ATTR_INT64_NAMED(struct_, member_, name_, exist_)                           \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_INT64(struct_, member_),                              \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_INT64_EXT(offsetof(struct_, member_), 0,                     \
+						BO_JSON_FLAGS_NONE),                               \
+	}
+
+#define BO_JSON_OBJECT_ATTR_INT64_NAMED_OR_NULL(struct_, member_, name_, exist_, flags_)           \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_INT64_EXT(offsetof(struct_, member_),                        \
+						offsetof(struct_, flags_),                         \
+						BO_JSON_FLAGS_NULLABLE),                           \
 	}
 
 #define BO_JSON_OBJECT_ATTR_DOUBLE_NAMED(struct_, member_, name_, exist_)                          \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_DOUBLE(struct_, member_),                             \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_DOUBLE_EXT(offsetof(struct_, member_), 0,                    \
+						 BO_JSON_FLAGS_NONE),                              \
+	}
+
+#define BO_JSON_OBJECT_ATTR_DOUBLE_NAMED_OR_NULL(struct_, member_, name_, exist_, flags_)          \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_DOUBLE_EXT(offsetof(struct_, member_),                       \
+						 offsetof(struct_, flags_),                        \
+						 BO_JSON_FLAGS_NULLABLE),                          \
 	}
 
 #define BO_JSON_OBJECT_ATTR_CSTR_ARRAY_NAMED(struct_, member_, name_, exist_)                      \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_CSTR_ARRAY(struct_, member_),                         \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_CSTR_EXT(sizeof(((struct_ *)(0))->member_),                  \
+					       offsetof(struct_, member_), 0, BO_JSON_FLAGS_NONE), \
+	}
+
+#define BO_JSON_OBJECT_ATTR_CSTR_ARRAY_NAMED_OR_NULL(struct_, member_, name_, exist_, flags_)      \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_CSTR_EXT(sizeof(((struct_ *)(0))->member_),                  \
+					       offsetof(struct_, member_),                         \
+					       offsetof(struct_, flags_), BO_JSON_FLAGS_NULLABLE), \
 	}
 
 #define BO_JSON_OBJECT_ATTR_OBJECT_NAMED(struct_, member_, obj_attrs_, name_, exist_)              \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_OBJECT(struct_, member_, obj_attrs_,                  \
-						    BO_ARRAY_SIZE(obj_attrs_)),                    \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_OBJECT_EXT(obj_attrs_, offsetof(struct_, member_), 0,        \
+						 BO_JSON_FLAGS_NONE),                              \
+	}
+
+#define BO_JSON_OBJECT_ATTR_OBJECT_NAMED_OR_NULL(struct_, member_, obj_attrs_, name_, exist_,      \
+						 flags_)                                           \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_OBJECT_EXT(obj_attrs_, offsetof(struct_, member_),           \
+						 offsetof(struct_, flags_),                        \
+						 BO_JSON_FLAGS_NULLABLE),                          \
 	}
 
 #define BO_JSON_OBJECT_ATTR_ARRAY_NAMED(struct_, member_, elem_desc_, capacity_, name_, exist_,    \
-					_count)                                                    \
+					count_)                                                    \
 	{                                                                                          \
-		.name = name_, .exist_offset = offsetof(struct_, exist_),                          \
-		.desc = BO_JSON_VALUE_STRUCT_ARRAY(struct_, member_, elem_desc_, capacity_,        \
-						   _count),                                        \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_ARRAY_EXT(struct_, member_, elem_desc_,                      \
+						offsetof(struct_, member_), capacity_,             \
+						offsetof(struct_, count_), 0, BO_JSON_FLAGS_NONE), \
 	}
 
-#define BO_JSON_OBJECT_ATTR_NULL(struct_, member_, exist_)                                         \
-	BO_JSON_OBJECT_ATTR_NULL_NAMED(struct_, member_, #member_, exist_)
+#define BO_JSON_OBJECT_ATTR_ARRAY_NAMED_OR_NULL(struct_, member_, elem_desc_, capacity_, name_,    \
+						exist_, count_, flags_)                            \
+	{                                                                                          \
+		.name = name_,                                                                     \
+		.exist_offset = offsetof(struct_, exist_),                                         \
+		.desc = BO_JSON_VALUE_ARRAY_EXT(                                                   \
+			struct_, member_, elem_desc_, offsetof(struct_, member_), capacity_,       \
+			offsetof(struct_, count_), offsetof(struct_, flags_),                      \
+			BO_JSON_FLAGS_NULLABLE),                                                   \
+	}
 
 #define BO_JSON_OBJECT_ATTR_BOOL(struct_, member_, exist_)                                         \
 	BO_JSON_OBJECT_ATTR_BOOL_NAMED(struct_, member_, #member_, exist_)
 
+#define BO_JSON_OBJECT_ATTR_BOOL_OR_NULL(struct_, member_, exist_, flags_)                         \
+	BO_JSON_OBJECT_ATTR_BOOL_NAMED_OR_NULL(struct_, member_, #member_, exist_, flags_)
+
 #define BO_JSON_OBJECT_ATTR_INT(struct_, member_, exist_)                                          \
 	BO_JSON_OBJECT_ATTR_INT_NAMED(struct_, member_, #member_, exist_)
+
+#define BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct_, member_, exist_, flags_)                          \
+	BO_JSON_OBJECT_ATTR_INT_NAMED_OR_NULL(struct_, member_, #member_, exist_, flags_)
 
 #define BO_JSON_OBJECT_ATTR_INT64(struct_, member_, exist_)                                        \
 	BO_JSON_OBJECT_ATTR_INT64_NAMED(struct_, member_, #member_, exist_)
 
+#define BO_JSON_OBJECT_ATTR_INT64_OR_NULL(struct_, member_, exist_, flags_)                        \
+	BO_JSON_OBJECT_ATTR_INT64_NAMED_OR_NULL(struct_, member_, #member_, exist_, flags_)
+
 #define BO_JSON_OBJECT_ATTR_DOUBLE(struct_, member_, exist_)                                       \
 	BO_JSON_OBJECT_ATTR_DOUBLE_NAMED(struct_, member_, #member_, exist_)
+
+#define BO_JSON_OBJECT_ATTR_DOUBLE_OR_NULL(struct_, member_, exist_, flags_)                       \
+	BO_JSON_OBJECT_ATTR_DOUBLE_NAMED_OR_NULL(struct_, member_, #member_, exist_, flags_)
 
 #define BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct_, member_, exist_)                                   \
 	BO_JSON_OBJECT_ATTR_CSTR_ARRAY_NAMED(struct_, member_, #member_, exist_)
 
+#define BO_JSON_OBJECT_ATTR_CSTR_ARRAY_OR_NULL(struct_, member_, exist_, flags_)                   \
+	BO_JSON_OBJECT_ATTR_CSTR_ARRAY_NAMED_OR_NULL(struct_, member_, #member_, exist_, flags_)
+
 #define BO_JSON_OBJECT_ATTR_OBJECT(struct_, member_, obj_attrs_, exist_)                           \
 	BO_JSON_OBJECT_ATTR_OBJECT_NAMED(struct_, member_, obj_attrs_, #member_, exist_)
+
+#define BO_JSON_OBJECT_ATTR_OBJECT_OR_NULL(struct_, member_, obj_attrs_, exist_, flags_)           \
+	BO_JSON_OBJECT_ATTR_OBJECT_NAMED_OR_NULL(struct_, member_, obj_attrs_, #member_, exist_,   \
+						 flags_)
+
+#define BO_JSON_OBJECT_ATTR_ARRAY(struct_, member_, elem_desc_, capacity_, exist_, count_)         \
+	BO_JSON_OBJECT_ATTR_ARRAY_NAMED(struct_, member_, elem_desc_, capacity_, #member_, exist_, \
+					count_)
+
+#define BO_JSON_OBJECT_ATTR_ARRAY_OR_NULL(struct_, member_, elem_desc_, capacity_, exist_, count_, \
+					  flags_)                                                  \
+	BO_JSON_OBJECT_ATTR_ARRAY_NAMED_OR_NULL(struct_, member_, elem_desc_, capacity_, #member_, \
+						exist_, count_, flags_)
 
 struct bo_json_value_desc {
 	union {
@@ -244,7 +346,9 @@ struct bo_json_value_desc {
 		} string;
 	};
 	size_t value_offset;
+	size_t flags_offset;
 	enum bo_json_value_type type;
+	unsigned int flags;
 };
 
 struct bo_json_obj_attr_desc {
