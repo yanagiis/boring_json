@@ -248,8 +248,8 @@ void test_decode_array_bool(void)
 	};
 	struct array_boolean actual = {0};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_boolean, booleans, &bo_json_bool_desc, 4);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_boolean, booleans, &bo_json_bool_desc, 4, booleans_count);
 
 	struct bo_json_error err;
 
@@ -283,8 +283,8 @@ void test_decode_array_int(void)
 	};
 	struct array_int actual = {0};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_int, ints, &bo_json_int_desc, 7);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_int, ints, &bo_json_int_desc, 7, ints_count);
 
 	struct bo_json_error err;
 
@@ -316,8 +316,8 @@ void test_decode_array_double(void)
 	};
 	struct array_double actual = {0};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_double, doubles, &bo_json_double_desc, 7);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_double, doubles, &bo_json_double_desc, 7, doubles_count);
 
 	struct bo_json_error err;
 
@@ -367,7 +367,7 @@ void test_decode_array_cstr(void)
 
 	const struct bo_json_value_desc cstr_desc = BO_JSON_VALUE_CSTR(8);
 	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_cstr, strs, &cstr_desc, 5);
+		BO_JSON_VALUE_STRUCT_ARRAY(struct array_cstr, strs, &cstr_desc, 5, strs_count);
 
 	struct bo_json_error err;
 

@@ -213,8 +213,8 @@ void test_encode_array_bool(void)
 		size_t booleans_count;
 	} input = {.booleans = {true, false, false, true}, .booleans_count = 4};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_boolean, booleans, &bo_json_bool_desc, 4);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_boolean, booleans, &bo_json_bool_desc, 4, booleans_count);
 
 	// clang-format off
 	const char expect[] = "["
@@ -244,8 +244,8 @@ void test_encode_array_int(void)
 		size_t ints_count;
 	} input = {.ints = {0, -100, 101, -9999, 10000}, .ints_count = 5};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_ints, ints, &bo_json_int_desc, 5);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_ints, ints, &bo_json_int_desc, 5, ints_count);
 
 	// clang-format off
 	const char expect[] = "["
@@ -275,8 +275,8 @@ void test_encode_array_double(void)
 		size_t doubles_count;
 	} input = {.doubles = {0.0, -100.1, 101.2, -9999.3, 10000.4}, .doubles_count = 5};
 
-	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_doubles, doubles, &bo_json_double_desc, 5);
+	const struct bo_json_value_desc array_desc = BO_JSON_VALUE_STRUCT_ARRAY(
+		struct array_doubles, doubles, &bo_json_double_desc, 5, doubles_count);
 
 	// clang-format off
 	const char expect[] = "["
@@ -310,7 +310,7 @@ void test_encode_array_cstr(void)
 	const struct bo_json_value_desc str_desc = BO_JSON_VALUE_CSTR(32);
 
 	const struct bo_json_value_desc array_desc =
-		BO_JSON_VALUE_STRUCT_ARRAY(struct array_strs, strs, &str_desc, 5);
+		BO_JSON_VALUE_STRUCT_ARRAY(struct array_strs, strs, &str_desc, 5, strs_count);
 
 	// clang-format off
 	const char expect[] = "["
