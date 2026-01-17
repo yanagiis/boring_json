@@ -63,6 +63,26 @@ void test_decode_int(void)
 	}
 }
 
+void test_decode_int_invalid(void)
+{
+	const char *inputs[] = {
+		"-01", "01", "00", "1.", "1.e1", ".1", "e1", "-", "-.", "-e",
+	};
+
+	for (size_t i = 0; i < BO_ARRAY_SIZE(inputs); i++) {
+		sprintf(error_message, "testcase[%zu]", i);
+
+		const char *input = inputs[i];
+		int actual = 0;
+
+		struct bo_json_error err =
+			bo_json_decode(input, strlen(input), &bo_json_int_desc, &actual);
+
+		// check decode result
+		TEST_ASSERT_NOT_EQUAL_MESSAGE(BO_JSON_ERROR_NONE, err.err, error_message);
+	}
+}
+
 void test_decode_double(void)
 {
 	const struct {
@@ -71,18 +91,19 @@ void test_decode_double(void)
 	} testcases[] = {
 		{.input = "0.1", .expect = 0.1},     {.input = "-100.1", .expect = -100.1},
 		{.input = "100.1", .expect = 100.1}, {.input = "-100.2", .expect = -100.2},
-		{.input = "100.3", .expect = 100.3},
+		{.input = "100.3", .expect = 100.3}, {.input = "1.5e10", .expect = 1.5e10},
+		{.input = "1E-10", .expect = 1e-10}, {.input = "0.0", .expect = 0.0},
 	};
 
 	for (size_t i = 0; i < BO_ARRAY_SIZE(testcases); i++) {
 		sprintf(error_message, "testcase[%zu]", i);
 
 		const char *input = testcases[i].input;
-		const int expect = testcases[i].expect;
-		int actual = false;
+		const double expect = testcases[i].expect;
+		double actual = 0.0;
 
 		struct bo_json_error err =
-			bo_json_decode(input, strlen(input), &bo_json_int_desc, &actual);
+			bo_json_decode(input, strlen(input), &bo_json_double_desc, &actual);
 
 		// check decode result
 		TEST_ASSERT_EQUAL_MESSAGE(BO_JSON_ERROR_NONE, err.err, error_message);
@@ -90,6 +111,27 @@ void test_decode_double(void)
 		// check decode value
 		TEST_ASSERT_EQUAL_DOUBLE_MESSAGE(expect, actual, error_message);
 	}
+}
+
+void test_decode_number_large(void)
+{
+	// Test number slightly larger than 24 bytes but smaller than 64
+	const char *input = "1.2345678901234567890123456789";
+	double actual = 0.0;
+
+	struct bo_json_error err =
+		bo_json_decode(input, strlen(input), &bo_json_double_desc, &actual);
+
+	TEST_ASSERT_EQUAL_MESSAGE(BO_JSON_ERROR_NONE, err.err, "Large number should parse");
+
+	// Too large number (>64 bytes)
+	const char *input_too_large =
+		"1.23456789012345678901234567890123456789012345678901234567890123456789";
+	err = bo_json_decode(input_too_large, strlen(input_too_large), &bo_json_double_desc,
+			     &actual);
+
+	TEST_ASSERT_EQUAL_MESSAGE(BO_JSON_ERROR_OVERFLOW, err.err,
+				  "Too large number should overflow");
 }
 
 void test_decode_cstr(void)
@@ -100,6 +142,14 @@ void test_decode_cstr(void)
 		size_t cap;
 	} testcases[] = {
 		{.input = "\"boring json\"", .expect = "boring json", .cap = 16},
+		{.input = "\"line1\\nline2\"", .expect = "line1\nline2", .cap = 16},
+		{.input = "\"tab\\tchar\"", .expect = "tab\tchar", .cap = 16},
+		{.input = "\"quote\\\"char\"", .expect = "quote\"char", .cap = 16},
+		{.input = "\"backslash\\\\char\"", .expect = "backslash\\char", .cap = 16},
+		{.input = "\"backspace\\bformfeed\\freturn\\r\"",
+		 .expect = "backspace\bformfeed\freturn\r",
+		 .cap = 32},
+		{.input = "\"unicode\\u0041\"", .expect = "unicodeA", .cap = 16},
 	};
 
 	for (size_t i = 0; i < BO_ARRAY_SIZE(testcases); i++) {

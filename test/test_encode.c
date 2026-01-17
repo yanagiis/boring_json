@@ -92,16 +92,22 @@ void test_encode_cstr(void)
 		const char *expect;
 	} testcases[] = {
 		{.input = "boring json", .expect = "\"boring json\""},
+		{.input = "line1\nline2", .expect = "\"line1\\nline2\""},
+		{.input = "tab\tchar", .expect = "\"tab\\tchar\""},
+		{.input = "quote\"char", .expect = "\"quote\\\"char\""},
+		{.input = "backslash\\char", .expect = "\"backslash\\\\char\""},
+		{.input = "backspace\bformfeed\freturn\r",
+		 .expect = "\"backspace\\bformfeed\\freturn\\r\""},
 	};
 
 	struct bo_json_simple_writer writer;
-	char buf[16];
+	char buf[64];
 
 	for (size_t i = 0; i < BO_ARRAY_SIZE(testcases); i++) {
 		sprintf(error_message, "testcase[%zu]", i);
 
 		const struct bo_json_value_desc cstr_desc =
-			BO_JSON_VALUE_CSTR(strlen(testcases[i].input));
+			BO_JSON_VALUE_CSTR(strlen(testcases[i].input) + 1);
 
 		bo_json_simple_writer_init(&writer, buf, sizeof(buf));
 		struct bo_json_error err =

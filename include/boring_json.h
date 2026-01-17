@@ -142,9 +142,6 @@ enum bo_json_value_type {
 			},                                                                         \
 	}
 
-#define BO_JSON_VALUE_ARRAY(elem_attrs_)                                                           \
-	BO_JSON_VALUE_OBJECT_EXT(elem_desc_, 0, 0, BO_JSON_FLAGS_NONE)
-
 // macros for member in struct
 
 #define BO_JSON_VALUE_STRUCT_INT(struct_, member_)                                                 \

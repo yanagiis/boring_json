@@ -1,5 +1,5 @@
-#ifndef BORING_JSON_PORT_H_
-#define BORING_JSON_PORT_H_
+#ifndef BORING_JSON_DEBUG_H_
+#define BORING_JSON_DEBUG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,4 +23,4 @@ extern "C" {
 }
 #endif
 
-#endif /* BORING_JSON_PORT_H_ */
+#endif /* BORING_JSON_DEBUG_H_ */

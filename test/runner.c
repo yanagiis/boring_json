@@ -2,7 +2,9 @@
 
 extern void test_decode_bool(void);
 extern void test_decode_int(void);
+extern void test_decode_int_invalid(void);
 extern void test_decode_double(void);
+extern void test_decode_number_large(void);
 extern void test_decode_cstr(void);
 extern void test_decode_object_primitive_types(void);
 extern void test_decode_array_bool(void);
@@ -39,7 +41,9 @@ int main(int argc, char *argv[])
 
 	RUN_TEST(test_decode_bool);
 	RUN_TEST(test_decode_int);
+	RUN_TEST(test_decode_int_invalid);
 	RUN_TEST(test_decode_double);
+	RUN_TEST(test_decode_number_large);
 	RUN_TEST(test_decode_cstr);
 	RUN_TEST(test_decode_object_primitive_types);
 	RUN_TEST(test_decode_array_bool);

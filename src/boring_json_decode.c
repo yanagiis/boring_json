@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "boring_json.h"
 #include "boring_json_debug.h"
@@ -118,7 +119,7 @@ static struct bo_json_error lexer_next_string(struct bo_json_lexer *lexer,
 		case '\\':
 			if (token->end + 1 < lexer->end) {
 				token->end++;
-				switch (*(token->end + 1)) {
+				switch (*token->end) {
 				case '"':
 				case '\\':
 				case '/':
@@ -143,8 +144,7 @@ static struct bo_json_error lexer_next_string(struct bo_json_lexer *lexer,
 								token->start, NULL);
 						}
 					}
-					bo_debug_token(token);
-					return BO_JSON_OK();
+					break;
 				default:
 					lexer->pos = token->end;
 					return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH,
@@ -202,15 +202,76 @@ static struct bo_json_error lexer_next_number(struct bo_json_lexer *lexer,
 					      struct bo_json_token *token)
 {
 	token->type = BO_JSON_TOKEN_NUMBER;
-	// FIXME:
-	// -01.1 should not pass
-	// -0.0.0.0.1 should not pass
-	for (; token->end < lexer->end; token->end++) {
-		if ((*token->end < '0' || *token->end > '9') && (*token->end != '.')) {
-			lexer->pos = token->end;
-			break;
+	const char *p = token->start;
+	const char *end = lexer->end;
+
+	// Optional minus
+	if (p < end && *p == '-') {
+		p++;
+	}
+
+	// Integer part
+	if (p >= end) {
+		return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, p, NULL);
+	}
+
+	if (*p == '0') {
+		p++;
+		// Leading zeros not allowed, unless it's just 0
+		// If next char is digit, it is invalid (e.g. 01)
+		// But 0.1 is valid.
+		if (p < end && *p >= '0' && *p <= '9') {
+			return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON, p, NULL);
+		}
+	} else if (*p >= '1' && *p <= '9') {
+		p++;
+		while (p < end && *p >= '0' && *p <= '9') {
+			p++;
+		}
+	} else {
+		return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON, p, NULL);
+	}
+
+	// Fraction part
+	if (p < end && *p == '.') {
+		p++;
+		if (p >= end) {
+			return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, p, NULL);
+		}
+		// Must have at least one digit
+		if (!(*p >= '0' && *p <= '9')) {
+			return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON, p, NULL);
+		}
+		p++;
+		while (p < end && *p >= '0' && *p <= '9') {
+			p++;
 		}
 	}
+
+	// Exponent part
+	if (p < end && (*p == 'e' || *p == 'E')) {
+		p++;
+		if (p >= end) {
+			return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, p, NULL);
+		}
+		if (*p == '+' || *p == '-') {
+			p++;
+		}
+		if (p >= end) {
+			return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, p, NULL);
+		}
+		// Must have at least one digit
+		if (!(*p >= '0' && *p <= '9')) {
+			return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON, p, NULL);
+		}
+		p++;
+		while (p < end && *p >= '0' && *p <= '9') {
+			p++;
+		}
+	}
+
+	token->end = p;
+	lexer->pos = p;
 
 	bo_debug_token(token);
 	return BO_JSON_OK();
@@ -403,12 +464,141 @@ static struct bo_json_error decode_string(const struct bo_json_token *token,
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 
-	if (token_len(token) >= desc->string.capacity) {
-		return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, token->start, desc);
+	char *dest = (char *)out + desc->value_offset;
+	const char *src = token->start;
+	const char *end = token->end;
+	size_t len = 0;
+	size_t cap = desc->string.capacity;
+
+	while (src < end) {
+		if (*src == '\\') {
+			src++;
+			if (src >= end) {
+				return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, src, desc);
+			}
+
+			char c = *src;
+			switch (c) {
+			case '"':
+			case '\\':
+			case '/':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = c;
+				len++;
+				break;
+			case 'b':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = '\b';
+				len++;
+				break;
+			case 'f':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = '\f';
+				len++;
+				break;
+			case 'n':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = '\n';
+				len++;
+				break;
+			case 'r':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = '\r';
+				len++;
+				break;
+			case 't':
+				if (len + 1 >= cap) {
+					return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							     desc);
+				}
+				*dest++ = '\t';
+				len++;
+				break;
+			case 'u': {
+				unsigned int codepoint = 0;
+				for (int i = 0; i < 4; i++) {
+					src++;
+					if (src >= end) {
+						return BO_JSON_ERROR(BO_JSON_ERROR_PARTIAL, src,
+								     desc);
+					}
+					char h = *src;
+					int val = 0;
+					if (h >= '0' && h <= '9') {
+						val = h - '0';
+					} else if (h >= 'a' && h <= 'f') {
+						val = h - 'a' + 10;
+					} else if (h >= 'A' && h <= 'F') {
+						val = h - 'A' + 10;
+					} else {
+						return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON,
+								     src, desc);
+					}
+					codepoint = (codepoint << 4) | val;
+				}
+
+				if (codepoint <= 0x7F) {
+					if (len + 1 >= cap) {
+						return BO_JSON_ERROR(
+							BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							desc);
+					}
+					*dest++ = (char)codepoint;
+					len++;
+				} else if (codepoint <= 0x7FF) {
+					if (len + 2 >= cap) {
+						return BO_JSON_ERROR(
+							BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							desc);
+					}
+					*dest++ = (char)(0xC0 | (codepoint >> 6));
+					*dest++ = (char)(0x80 | (codepoint & 0x3F));
+					len += 2;
+				} else {
+					if (len + 3 >= cap) {
+						return BO_JSON_ERROR(
+							BO_JSON_ERROR_INSUFFICIENT_SPACE, src,
+							desc);
+					}
+					*dest++ = (char)(0xE0 | (codepoint >> 12));
+					*dest++ = (char)(0x80 | ((codepoint >> 6) & 0x3F));
+					*dest++ = (char)(0x80 | (codepoint & 0x3F));
+					len += 3;
+				}
+				break;
+			}
+			default:
+				return BO_JSON_ERROR(BO_JSON_ERROR_INVALID_JSON, src, desc);
+			}
+		} else {
+			if (len + 1 >= cap) {
+				return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src, desc);
+			}
+			*dest++ = *src;
+			len++;
+		}
+		src++;
 	}
 
-	strncpy((char *)out + desc->value_offset, token->start, token_len(token));
-	*((char *)((char *)out + desc->value_offset + token_len(token))) = '\0';
+	if (len >= cap) {
+		return BO_JSON_ERROR(BO_JSON_ERROR_INSUFFICIENT_SPACE, src, desc);
+	}
+	*dest = '\0';
 
 	return BO_JSON_OK();
 }
@@ -436,9 +626,11 @@ static struct bo_json_error decode_number(const struct bo_json_token *token,
 		return BO_JSON_ERROR(BO_JSON_ERROR_TYPE_NOT_MATCH, token->start, desc);
 	}
 
-	char buf[24] = {0};
+	char buf[64] = {0};
 
-	assert(sizeof(buf) > token_len(token));
+	if (token_len(token) >= sizeof(buf)) {
+		return BO_JSON_ERROR(BO_JSON_ERROR_OVERFLOW, token->start, desc);
+	}
 
 	strncpy(buf, token->start, token_len(token));
 
@@ -482,12 +674,6 @@ static struct bo_json_error decode_value(struct bo_json_lexer *lexer,
 	default:
 		return BO_JSON_ERROR(BO_JSON_ERROR_NOT_SUPPORT, token.start, desc);
 	}
-
-	if (err.err != BO_JSON_ERROR_NONE) {
-		return err;
-	}
-
-	return BO_JSON_OK();
 }
 
 /**

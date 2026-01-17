@@ -74,10 +74,42 @@ static struct bo_json_error encode_cstr(const void *in, const struct bo_json_val
 	}
 
 	const char *str = (const char *)in + in_desc->value_offset;
+	const char *ptr = str;
 
-	err = bo_json_writer_write(writer, str, strlen(str));
-	if (err.err != BO_JSON_ERROR_NONE) {
-		return err;
+	while (*ptr != '\0') {
+		const char *c = ptr;
+		ptr++;
+
+		switch (*c) {
+		case '\"':
+			err = bo_json_writer_write(writer, "\\\"", 2);
+			break;
+		case '\\':
+			err = bo_json_writer_write(writer, "\\\\", 2);
+			break;
+		case '\b':
+			err = bo_json_writer_write(writer, "\\b", 2);
+			break;
+		case '\f':
+			err = bo_json_writer_write(writer, "\\f", 2);
+			break;
+		case '\n':
+			err = bo_json_writer_write(writer, "\\n", 2);
+			break;
+		case '\r':
+			err = bo_json_writer_write(writer, "\\r", 2);
+			break;
+		case '\t':
+			err = bo_json_writer_write(writer, "\\t", 2);
+			break;
+		default:
+			err = bo_json_writer_write(writer, c, 1);
+			break;
+		}
+
+		if (err.err != BO_JSON_ERROR_NONE) {
+			return err;
+		}
 	}
 
 	return bo_json_writer_write(writer, "\"", 1);
