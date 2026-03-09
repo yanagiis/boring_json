@@ -1,13 +1,14 @@
 # Boring JSON
 
-Boring JSON is a lightweight JSON library written in C99, designed specifically for embedded systems. It utilizes metadata descriptors to map C structures directly to JSON values, significantly simplifying the encoding and decoding process without the need for dynamic allocation.
+Boring JSON is a lightweight JSON library written in C11, designed specifically for embedded systems. It utilizes metadata descriptors to map C structures directly to JSON values, significantly simplifying the encoding and decoding process without the need for dynamic allocation.
 
 The implementation is heavily inspired by the `json.c` module in Zephyr RTOS.
 
 ## Features
 
-- **C99 Compatible**: Standard C implementation with no modern dependencies.
+- **C11 Compatible**: Uses standard C11 features for compile-time type validation.
 - **Metadata-Driven**: Define your data structures once and map them using simple macros.
+- **Type-Safe Macros**: Descriptor macros reject incorrect scalar fields, bookkeeping fields, and `char *` string members at compile time, with `_TYPED` variants for nested object and array storage checks.
 - **Static Allocation**: Zero dynamic memory usage (`malloc`/`free`) during core operations, making it safe for heap-constrained systems.
 - **RFC 8259 Compliant**: Robust number validation and full support for JSON escape sequences.
 - **Flexible Writing**: Supports writing to fixed buffers or custom memory writers.
@@ -19,7 +20,7 @@ The implementation is heavily inspired by the `json.c` module in Zephyr RTOS.
 
 - **CMake** (version 3.12.4 or higher)
 - **Ninja** (optional, recommended for fast builds)
-- **GCC/Clang** or any C99-compliant compiler
+- **GCC/Clang** or any C11-compliant compiler
 
 ### Build
 
@@ -48,6 +49,9 @@ struct my_data {
     int id;
     bool active;
     char name[32];
+    bool id_exist;
+    bool active_exist;
+    bool name_exist;
 };
 
 static const struct bo_json_obj_attr_desc my_data_attrs[] = {
@@ -58,6 +62,48 @@ static const struct bo_json_obj_attr_desc my_data_attrs[] = {
 
 static const struct bo_json_value_desc my_data_desc = BO_JSON_VALUE_OBJECT(my_data_attrs);
 ```
+
+The object attribute macros validate field types at compile time. For example, `BO_JSON_OBJECT_ATTR_INT(...)` requires an `int` member, `exist_` fields must be `bool`, nullable `flags_` fields must be `unsigned char`, array `count_` fields must be `size_t`, and `BO_JSON_OBJECT_ATTR_CSTR_ARRAY(...)` requires `char name[N]` storage rather than `char *`.
+
+For nested objects and arrays, use the `_TYPED` variants when you want compile-time storage checks as well, such as `BO_JSON_OBJECT_ATTR_OBJECT_TYPED(...)`, `BO_JSON_OBJECT_ATTR_ARRAY_TYPED(...)`, `BO_JSON_VALUE_STRUCT_OBJECT_TYPED(...)`, and `BO_JSON_VALUE_STRUCT_ARRAY_TYPED(...)`. These variants validate the object member type or array element type against an explicit C type token.
+
+Untyped object and array macros remain available for backward compatibility, but they still rely on the caller to keep member storage and descriptors aligned.
+
+When you have nested object or array fields, prefer the typed variants so the compiler can validate the storage shape too:
+
+```c
+struct child {
+    int id;
+    bool id_exist;
+};
+
+struct parent {
+    struct child child;
+    bool child_exist;
+
+    int values[4];
+    bool values_exist;
+    size_t values_count;
+};
+
+static const struct bo_json_obj_attr_desc child_attrs[] = {
+    BO_JSON_OBJECT_ATTR_INT(struct child, id, id_exist),
+};
+
+static const struct bo_json_obj_attr_desc parent_attrs[] = {
+    BO_JSON_OBJECT_ATTR_OBJECT_TYPED(struct parent, child, struct child, child_attrs,
+                                     child_exist),
+    BO_JSON_OBJECT_ATTR_ARRAY_TYPED(struct parent, values, int, &bo_json_int_desc, 4,
+                                    values_exist, values_count),
+};
+```
+
+The `_TYPED` variants catch mistakes like:
+- using the wrong nested struct type for an object field
+- using the wrong element type for an array field
+- passing a pointer where a fixed array is required
+
+They still do not prove that `obj_attrs_`, `elem_desc_`, or `capacity_` are semantically correct; those remain part of the caller contract.
 
 ### 2. Decode JSON
 
