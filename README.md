@@ -38,6 +38,19 @@ ninja
 ./boring_json_test
 ```
 
+To run the runtime tests under Clang sanitizers:
+
+```bash
+cmake -GNinja -S . -B build-sanitize \
+  -DCMAKE_C_COMPILER=clang \
+  -DCONFIG_BORING_JSON_TESTING=ON \
+  -DCONFIG_BORING_JSON_TEST_SANITIZERS=ON
+cmake --build build-sanitize
+./build-sanitize/boring_json_test
+```
+
+`CONFIG_BORING_JSON_TEST_SANITIZERS` requires `CONFIG_BORING_JSON_TESTING=ON`, is limited to Clang-based Linux runtime test builds, and does not change the compile-fail test harness.
+
 ## Usage
 
 ### 1. Define your structure and metadata

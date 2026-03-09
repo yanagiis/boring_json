@@ -1,5 +1,20 @@
 option(CONFIG_BORING_JSON_DEBUG "Enable debug print" OFF)
 option(CONFIG_BORING_JSON_TESTING "Build testing" OFF)
+option(CONFIG_BORING_JSON_TEST_SANITIZERS "Enable Clang sanitizers for runtime tests" OFF)
+
+if(CONFIG_BORING_JSON_TEST_SANITIZERS)
+  if(NOT CONFIG_BORING_JSON_TESTING)
+    message(FATAL_ERROR
+            "CONFIG_BORING_JSON_TEST_SANITIZERS requires CONFIG_BORING_JSON_TESTING=ON")
+  endif()
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "CONFIG_BORING_JSON_TEST_SANITIZERS supports Linux runtime tests only")
+  endif()
+  if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    message(FATAL_ERROR
+            "CONFIG_BORING_JSON_TEST_SANITIZERS requires Clang for Linux runtime tests")
+  endif()
+endif()
 
 add_library(boring_json ${SOURCES})
 target_compile_features(boring_json PUBLIC c_std_11)
@@ -175,5 +190,22 @@ if(CONFIG_BORING_JSON_TESTING)
 
   add_custom_target(boring_json_negative_tests ALL DEPENDS ${MACRO_COMPILE_FAIL_OUTPUTS})
   add_dependencies(boring_json_test boring_json_negative_tests)
+
+  if(CONFIG_BORING_JSON_TEST_SANITIZERS)
+    set(BORING_JSON_TEST_SANITIZER_FLAGS
+        -fsanitize=address
+        -fsanitize=undefined
+        -fsanitize=leak)
+    set(BORING_JSON_TEST_SANITIZER_COMPILE_FLAGS
+        ${BORING_JSON_TEST_SANITIZER_FLAGS}
+        -fno-omit-frame-pointer)
+    string(JOIN " " BORING_JSON_TEST_SANITIZER_LINK_FLAGS ${BORING_JSON_TEST_SANITIZER_FLAGS})
+
+    foreach(target boring_json unity boring_json_test)
+      target_compile_options(${target} PRIVATE ${BORING_JSON_TEST_SANITIZER_COMPILE_FLAGS})
+      set_property(TARGET ${target} APPEND_STRING PROPERTY LINK_FLAGS
+                                                          " ${BORING_JSON_TEST_SANITIZER_LINK_FLAGS}")
+    endforeach()
+  endif()
 
 endif()
