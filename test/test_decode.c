@@ -227,28 +227,24 @@ struct prims {
 };
 
 static const struct bo_json_obj_attr_desc prims_attrs[] = {
-	BO_JSON_OBJECT_ATTR_BOOL(struct prims, f, f_exist),
-	BO_JSON_OBJECT_ATTR_BOOL(struct prims, t, t_exist),
-	BO_JSON_OBJECT_ATTR_INT(struct prims, positive_int, positive_int_exist),
-	BO_JSON_OBJECT_ATTR_INT(struct prims, negative_int, negative_int_exist),
-	BO_JSON_OBJECT_ATTR_DOUBLE(struct prims, positive_double, positive_double_exist),
-	BO_JSON_OBJECT_ATTR_DOUBLE(struct prims, negative_double, negative_double_exist),
-	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct prims, str, str_exist),
+	BO_JSON_OBJECT_ATTR_BOOL(struct prims, f),
+	BO_JSON_OBJECT_ATTR_BOOL(struct prims, t),
+	BO_JSON_OBJECT_ATTR_INT(struct prims, positive_int),
+	BO_JSON_OBJECT_ATTR_INT(struct prims, negative_int),
+	BO_JSON_OBJECT_ATTR_DOUBLE(struct prims, positive_double),
+	BO_JSON_OBJECT_ATTR_DOUBLE(struct prims, negative_double),
+	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct prims, str),
 	BO_JSON_OBJECT_ATTR_ARRAY(struct prims, arr_integer, &bo_json_int_desc, 8,
-				  arr_integer_exist, arr_integer_count),
-	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, positive_int_null, positive_int_null_exist,
-					positive_int_null_flags),
-	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, negative_int_null, negative_int_null_exist,
-					negative_int_null_flags),
+				  arr_integer_count),
+	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, positive_int_null, positive_int_null_flags),
+	BO_JSON_OBJECT_ATTR_INT_OR_NULL(struct prims, negative_int_null, negative_int_null_flags),
 	BO_JSON_OBJECT_ATTR_DOUBLE_OR_NULL(struct prims, positive_double_null,
-					   positive_double_null_exist, positive_double_null_flags),
+					   positive_double_null_flags),
 	BO_JSON_OBJECT_ATTR_DOUBLE_OR_NULL(struct prims, negative_double_null,
-					   negative_double_null_exist, negative_double_null_flags),
-	BO_JSON_OBJECT_ATTR_CSTR_ARRAY_OR_NULL(struct prims, str_null, str_null_exist,
-					       str_null_flags),
+					   negative_double_null_flags),
+	BO_JSON_OBJECT_ATTR_CSTR_ARRAY_OR_NULL(struct prims, str_null, str_null_flags),
 	BO_JSON_OBJECT_ATTR_ARRAY_OR_NULL(struct prims, arr_integer_null, &bo_json_int_desc, 8,
-					  arr_integer_null_exist, arr_integer_count,
-					  arr_integer_null_flags),
+					  arr_integer_count, arr_integer_null_flags),
 };
 
 static const struct bo_json_value_desc prims_desc = BO_JSON_VALUE_OBJECT(prims_attrs);
@@ -543,23 +539,23 @@ struct obj_root {
 };
 
 static const struct bo_json_obj_attr_desc obj_nest_2_attrs[] = {
-	BO_JSON_OBJECT_ATTR_BOOL(struct obj_nest_2, f, f_exist),
-	BO_JSON_OBJECT_ATTR_BOOL(struct obj_nest_2, t, t_exist),
-	BO_JSON_OBJECT_ATTR_INT(struct obj_nest_2, positive_int, positive_int_exist),
-	BO_JSON_OBJECT_ATTR_INT(struct obj_nest_2, negative_int, negative_int_exist),
-	BO_JSON_OBJECT_ATTR_DOUBLE(struct obj_nest_2, positive_double, positive_double_exist),
-	BO_JSON_OBJECT_ATTR_DOUBLE(struct obj_nest_2, negative_double, negative_double_exist),
-	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct obj_nest_2, str, str_exist),
+	BO_JSON_OBJECT_ATTR_BOOL(struct obj_nest_2, f),
+	BO_JSON_OBJECT_ATTR_BOOL(struct obj_nest_2, t),
+	BO_JSON_OBJECT_ATTR_INT(struct obj_nest_2, positive_int),
+	BO_JSON_OBJECT_ATTR_INT(struct obj_nest_2, negative_int),
+	BO_JSON_OBJECT_ATTR_DOUBLE(struct obj_nest_2, positive_double),
+	BO_JSON_OBJECT_ATTR_DOUBLE(struct obj_nest_2, negative_double),
+	BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct obj_nest_2, str),
 	BO_JSON_OBJECT_ATTR_ARRAY(struct obj_nest_2, arr_integer, &bo_json_int_desc, 8,
-				  arr_integer_exist, arr_integer_count),
+				  arr_integer_count),
 };
 
 static const struct bo_json_obj_attr_desc obj_nest_1_attrs[] = {
-	BO_JSON_OBJECT_ATTR_OBJECT(struct obj_nest_1, nest2, obj_nest_2_attrs, nest2_exist),
+	BO_JSON_OBJECT_ATTR_OBJECT(struct obj_nest_1, nest2, obj_nest_2_attrs),
 };
 
 static const struct bo_json_obj_attr_desc obj_root_attrs[] = {
-	BO_JSON_OBJECT_ATTR_OBJECT(struct obj_root, nest1, obj_nest_1_attrs, nest1_exist),
+	BO_JSON_OBJECT_ATTR_OBJECT(struct obj_root, nest1, obj_nest_1_attrs),
 };
 static const struct bo_json_value_desc obj_root_desc = BO_JSON_VALUE_OBJECT(obj_root_attrs);
 

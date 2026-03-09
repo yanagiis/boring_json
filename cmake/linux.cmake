@@ -51,6 +51,8 @@ if(CONFIG_BORING_JSON_TESTING)
       TEST_WRONG_INT64_MEMBER_TYPE
       TEST_WRONG_DOUBLE_MEMBER_TYPE
       TEST_WRONG_EXIST_FIELD_TYPE
+      TEST_INFERRED_EXIST_FIELD_MISSING
+      TEST_INFERRED_EXIST_FIELD_WRONG_TYPE
       TEST_WRONG_FLAGS_FIELD_TYPE
       TEST_WRONG_BOOL_OR_NULL_FLAGS_FIELD_TYPE
       TEST_WRONG_INT_OR_NULL_FLAGS_FIELD_TYPE
@@ -62,8 +64,10 @@ if(CONFIG_BORING_JSON_TESTING)
       TEST_WRONG_COUNT_FIELD_TYPE
       TEST_ARRAY_OR_NULL_WRONG_COUNT_FIELD_TYPE
       TEST_TYPED_OBJECT_WRONG_MEMBER_TYPE
+      TEST_TYPED_OBJECT_INFERRED_EXIST_FIELD_MISSING
       TEST_TYPED_OBJECT_OR_NULL_WRONG_MEMBER_TYPE
       TEST_TYPED_ARRAY_WRONG_ELEMENT_TYPE
+      TEST_TYPED_ARRAY_INFERRED_EXIST_FIELD_MISSING
       TEST_TYPED_ARRAY_OR_NULL_WRONG_ELEMENT_TYPE
       TEST_VALUE_STRUCT_WRONG_INT_MEMBER_TYPE
       TEST_VALUE_STRUCT_WRONG_INT64_MEMBER_TYPE
@@ -85,6 +89,10 @@ if(CONFIG_BORING_JSON_TESTING)
     elseif(scenario STREQUAL TEST_WRONG_DOUBLE_MEMBER_TYPE)
       set(expected_token BO_JSON_expected_double_member)
     elseif(scenario STREQUAL TEST_WRONG_EXIST_FIELD_TYPE)
+      set(expected_token BO_JSON_expected_bool_exist_field)
+    elseif(scenario STREQUAL TEST_INFERRED_EXIST_FIELD_MISSING)
+      set(expected_token value_exist)
+    elseif(scenario STREQUAL TEST_INFERRED_EXIST_FIELD_WRONG_TYPE)
       set(expected_token BO_JSON_expected_bool_exist_field)
     elseif(scenario STREQUAL TEST_WRONG_FLAGS_FIELD_TYPE)
       set(expected_token BO_JSON_expected_unsigned_char_flags_field)
@@ -108,10 +116,14 @@ if(CONFIG_BORING_JSON_TESTING)
       set(expected_token BO_JSON_expected_unsigned_char_flags_field)
     elseif(scenario STREQUAL TEST_TYPED_OBJECT_WRONG_MEMBER_TYPE)
       set(expected_token BO_JSON_expected_typed_object_member)
+    elseif(scenario STREQUAL TEST_TYPED_OBJECT_INFERRED_EXIST_FIELD_MISSING)
+      set(expected_token value_exist)
     elseif(scenario STREQUAL TEST_TYPED_OBJECT_OR_NULL_WRONG_MEMBER_TYPE)
       set(expected_token BO_JSON_expected_typed_object_member)
     elseif(scenario STREQUAL TEST_TYPED_ARRAY_WRONG_ELEMENT_TYPE)
       set(expected_token BO_JSON_expected_typed_array_element)
+    elseif(scenario STREQUAL TEST_TYPED_ARRAY_INFERRED_EXIST_FIELD_MISSING)
+      set(expected_token values_exist)
     elseif(scenario STREQUAL TEST_TYPED_ARRAY_OR_NULL_WRONG_ELEMENT_TYPE)
       set(expected_token BO_JSON_expected_typed_array_element)
     elseif(scenario STREQUAL TEST_VALUE_STRUCT_WRONG_INT_MEMBER_TYPE)
