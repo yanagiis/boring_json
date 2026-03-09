@@ -4,6 +4,10 @@ if(NOT ESP_PLATFORM)
   project(boringjson C)
 endif()
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
+
 set(BORING_JSON_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 # boring json
