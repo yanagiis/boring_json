@@ -55,15 +55,32 @@ struct my_data {
 };
 
 static const struct bo_json_obj_attr_desc my_data_attrs[] = {
-    BO_JSON_OBJECT_ATTR_INT(struct my_data, id, id_exist),
-    BO_JSON_OBJECT_ATTR_BOOL(struct my_data, active, active_exist),
-    BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct my_data, name, name_exist),
+    BO_JSON_OBJECT_ATTR_INT(struct my_data, id),
+    BO_JSON_OBJECT_ATTR_BOOL(struct my_data, active),
+    BO_JSON_OBJECT_ATTR_CSTR_ARRAY(struct my_data, name),
 };
 
 static const struct bo_json_value_desc my_data_desc = BO_JSON_VALUE_OBJECT(my_data_attrs);
 ```
 
-The object attribute macros validate field types at compile time. For example, `BO_JSON_OBJECT_ATTR_INT(...)` requires an `int` member, `exist_` fields must be `bool`, nullable `flags_` fields must be `unsigned char`, array `count_` fields must be `size_t`, and `BO_JSON_OBJECT_ATTR_CSTR_ARRAY(...)` requires `char name[N]` storage rather than `char *`.
+By default, object attribute macros infer the presence field as `<member>_exist`. In the example above, `BO_JSON_OBJECT_ATTR_INT(struct my_data, id)` uses `id_exist` automatically.
+
+The object attribute macros validate field types at compile time. For example, `BO_JSON_OBJECT_ATTR_INT(...)` requires an `int` member, inferred or explicit exist fields must be `bool`, nullable `flags_` fields must be `unsigned char`, array `count_` fields must be `size_t`, and `BO_JSON_OBJECT_ATTR_CSTR_ARRAY(...)` requires `char name[N]` storage rather than `char *`. If the inferred `<member>_exist` field is missing, the compiler points at that missing field name; if it exists with the wrong type, the compiler emits the existing `BO_JSON_expected_bool_exist_field` diagnostic token.
+
+When you need a custom bookkeeping field name, use the explicit `_EXIST` escape-hatch macros:
+
+```c
+struct custom_presence {
+    int id;
+    bool has_id;
+};
+
+static const struct bo_json_obj_attr_desc custom_presence_attrs[] = {
+    BO_JSON_OBJECT_ATTR_INT_EXIST(struct custom_presence, id, has_id),
+};
+```
+
+The same pattern applies to named forms: `BO_JSON_OBJECT_ATTR_INT_NAMED(struct my_data, id, "identifier")` still infers `id_exist`, while `BO_JSON_OBJECT_ATTR_INT_NAMED_EXIST(...)` lets you override both the JSON key and the exist field explicitly.
 
 For nested objects and arrays, use the `_TYPED` variants when you want compile-time storage checks as well, such as `BO_JSON_OBJECT_ATTR_OBJECT_TYPED(...)`, `BO_JSON_OBJECT_ATTR_ARRAY_TYPED(...)`, `BO_JSON_VALUE_STRUCT_OBJECT_TYPED(...)`, and `BO_JSON_VALUE_STRUCT_ARRAY_TYPED(...)`. These variants validate the object member type or array element type against an explicit C type token.
 
@@ -87,14 +104,13 @@ struct parent {
 };
 
 static const struct bo_json_obj_attr_desc child_attrs[] = {
-    BO_JSON_OBJECT_ATTR_INT(struct child, id, id_exist),
+    BO_JSON_OBJECT_ATTR_INT(struct child, id),
 };
 
 static const struct bo_json_obj_attr_desc parent_attrs[] = {
-    BO_JSON_OBJECT_ATTR_OBJECT_TYPED(struct parent, child, struct child, child_attrs,
-                                     child_exist),
+    BO_JSON_OBJECT_ATTR_OBJECT_TYPED(struct parent, child, struct child, child_attrs),
     BO_JSON_OBJECT_ATTR_ARRAY_TYPED(struct parent, values, int, &bo_json_int_desc, 4,
-                                    values_exist, values_count),
+                                    values_count),
 };
 ```
 
@@ -140,7 +156,6 @@ if (err.err == BO_JSON_ERROR_NONE) {
 
 ## TODO
 
-- [ ] Remove the naming pattern requirement in struct field declarations (the need for `_exist` fields).
 - [ ] Provide more advanced examples for `BO_JSON_OBJECT_ATTR_*_NAMED`.
 - [ ] Add a configurable recursion limit for the decoder.
 
